@@ -18,10 +18,10 @@ single data.frame from which to match observations}
 integers or not}
 
 \item{...}{Other options used to control the random number generation, e.g., mean,
-var, lamba, min, max, n, etc.}
+sd, lamba, min, max, n, etc.}
 }
 \value{
-a data.frame with # observations equal to `nc` dataset.
+a data.frame with # observations equal to `nc`.
 }
 \description{
 `gen_var_num()` generates a character variable.

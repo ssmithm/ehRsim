@@ -9,8 +9,8 @@
 #' @param int logical indicating whether returned values should be rounded to
 #' integers or not
 #' @param ... Other options used to control the random number generation, e.g., mean,
-#' var, lamba, min, max, n, etc.
-#' @returns a data.frame with # observations equal to `nc` dataset.
+#' sd, lamba, min, max, n, etc.
+#' @returns a data.frame with # observations equal to `nc`.
 #' @examples
 #' x <- gen_var_num(v = systolic, nc = 1000, dist = "normal", int = TRUE, mean = 130, sd = 16)
 #' @export
