@@ -1,0 +1,16 @@
+Type: Package
+Package: ehRsim
+Title: Simulate electronic health record (EHR) data
+Version: 0.0.0032
+Authors@R: 
+    person("Steven", "Smith", , "ssmith@cop.ufl.edu", role = c("aut", "cre"))
+Description: ehRsim simulates EHR datasets
+License: MIT + file LICENSE
+Imports: 
+    dplyr,
+    lubridate,
+    openssl,
+    tidytable
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.1
