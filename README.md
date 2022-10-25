@@ -164,11 +164,21 @@ times, even though both admission date and discharge data are
 equivalent. We can update this with `update_rtime()`:
 
 ``` r
+encounters |> 
+  filter(admit_date == discharge_date) |> 
+  select(patid, admit_date, admit_time, discharge_date, discharge_time) |> 
+  print(n = 10)
+  
 encounters <- update_rtime(data = encounters, 
                            perm_date = admit_date, 
                            perm_time = admit_time, 
                            fix_date = discharge_date, 
                            fix_time = discharge_time)
+
+encounters |> 
+  filter(admit_date == discharge_date) |> 
+  select(patid, admit_date, admit_time, discharge_date, discharge_time) |> 
+  print(n = 10)
 ```
 
 Additional planned functionality include sampling from commonly-employed
