@@ -33,7 +33,6 @@ devtools::install_github("ssmithm/ehRsim")
 
 This is a basic example developing a few common datasets. Note that this example makes fairly heavy use of [dplyr](https://dplyr.tidyverse.org/):
 
-<<<<<<< HEAD
 ```{r example_cohort, message = FALSE, echo = TRUE}
 library(ehRsim)
 library(dplyr)
