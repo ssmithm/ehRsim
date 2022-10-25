@@ -1,7 +1,7 @@
 Type: Package
 Package: ehRsim
 Title: electronic health record (EHR) simulation 
-Version: 0.0.0034
+Version: 0.0.0036
 Authors@R: 
     person("Steven", "Smith", , "ssmith@cop.ufl.edu", role = c("aut", "cre"))
 Description: Simulate electronic health record (EHR) data, with examples based on the
