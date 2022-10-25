@@ -33,7 +33,7 @@ devtools::install_github("ssmithm/ehRsim")
 
 This is a basic example developing a few common datasets. Note that this example makes fairly heavy use of [dplyr](https://dplyr.tidyverse.org/):
 
-```{r example}
+```{r example_cohort, warning = FALSE, message = FALSE, echo = TRUE}
 library(ehRsim)
 library(dplyr)
 
@@ -47,12 +47,13 @@ aep = 15
 
 # create cohort
 cohort <- create_cohort(n_src, n_p)
+str(cohort)
 ```
 
 
 A demographics file can then be created and joined to the cohort table:
 
-```r
+```{r example_demographics}
 #### demographics ####
 sex <- gen_var_char(v = sex, nc = cohort, opts = c("F","M"), p = c(0.53, 0.47))
 
@@ -81,7 +82,7 @@ demographics <- dplyr::bind_cols(cohort, sex, race, ethnicity, birth_date)
 
 You might also want an encounter table, probably with multiple encounters/person:
   
-```r
+```{r example_encounters}
 # first create an encounters shell that has multiple encounters per patient.
 encounter_shell <- data.frame(pid = sample(cohort$pid, size = (nrow(cohort) * aep), replace = TRUE)) |>
   dplyr::arrange(pid)
@@ -132,9 +133,41 @@ encounters <- dplyr::bind_cols(dplyr::left_join(encounter_shell, cohort, by = "p
                                discharge_disposition) |>
   dplyr::mutate(discharge_date = dplyr::if_else(enc_type %in% c("AV", "TH", "ED"), admit_date, discharge_date),
                 discharge_disposition = dplyr::if_else(enc_type %in% c("AV", "TH"), "A", discharge_disposition))
+```
 
+
+You might have noticed in the above that discharge times are randomly selected. For datasets that have any significant number of observations, it's likely there will be discharge times that come before admission times, even though both admission date and discharge data are equivalent. We can update this with `update_rtime()`:
+
+```{r fix_encounter_datetimes}
+encounters_fixed <- encounters |>  
+  dplyr::mutate(needs_fixing = ifelse(as.POSIXct(paste(discharge_date, discharge_time), format = "%Y-%m-%d %H:%M") < as.POSIXct(paste(admit_date, admit_time), format = "%Y-%m-%d %H:%M"), "x", "")) 
+
+encounters_fixed |> 
+  dplyr::filter(admit_date == discharge_date) |>
+  dplyr::select(pid, admit_date, admit_time, discharge_date, discharge_time, needs_fixing) |> 
+  head(10)
+  
+encounters_fixed <- update_rtime(data = encounters_fixed, 
+                                 perm_date = admit_date, 
+                                 perm_time = admit_time, 
+                                 fix_date = discharge_date, 
+                                 fix_time = discharge_time)
+
+encounters_fixed |> 
+  dplyr::filter(admit_date == discharge_date) |>
+  dplyr::select(pid, admit_date, admit_time, discharge_date, discharge_time, needs_fixing) |> 
+  head(10) 
+
+encounters_fixed <- encounters_fixed |> 
+  dplyr::select(-needs_fixing)
+```
+
+
+We might also want to delete encounters after an Expired discharge_disposition (this will hopefully soon be put into its own function):
+
+```{r clean_up_}
 # delete encounters after an Expired discharge_disposition
-encounters_death <- encounters |>
+encounters_death <- encounters_fixed |>
   dplyr::filter(discharge_disposition == "E") |>
   dplyr::select(pid, source, discharge_date) |>
   dplyr::rename(dead_after = discharge_date) |>
@@ -143,7 +176,7 @@ encounters_death <- encounters |>
   dplyr::slice(1) |>
   dplyr::ungroup()
 
-encounters_ <- dplyr::left_join(encounters, encounters_death, by = c("pid", "source")) |>
+encounters_ <- dplyr::left_join(encounters_fixed, encounters_death, by = c("pid", "source")) |>
   dplyr::arrange(source, pid, admit_date)
 encounters <- encounters_ |>
   dplyr::filter(is.na(dead_after) | (admit_date <= dead_after)) |>
@@ -155,27 +188,7 @@ encounters <- encounters |>
                 encounterid = openssl::md5(unique_combo)) |>
   dplyr::select(-los, -unique_combo) |>
   dplyr::relocate(pid, encounterid, enc_type, admit_date, discharge_date, discharge_disposition, source)
-
 ```
 
-You might have noticed in the above that discharge times are randomly selected. For datasets that have any significant number of observations, it's likely there will be discharge times that come before admission times, even though both admission date and discharge data are equivalent. We can update this with `update_rtime()`:
-
-```r
-encounters |> 
-  filter(admit_date == discharge_date) |> 
-  select(patid, admit_date, admit_time, discharge_date, discharge_time) |> 
-  print(n = 10)
-  
-encounters <- update_rtime(data = encounters, 
-                           perm_date = admit_date, 
-                           perm_time = admit_time, 
-                           fix_date = discharge_date, 
-                           fix_time = discharge_time)
-
-encounters |> 
-  filter(admit_date == discharge_date) |> 
-  select(patid, admit_date, admit_time, discharge_date, discharge_time) |> 
-  print(n = 10)
-```
 
 Additional planned functionality include sampling from commonly-employed datasets and ontologies, for example, International Classification of Diseases (ICD) codes, RXNORM or SNOMED codes, LOINC codes, and so on. Stay tuned. 

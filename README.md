@@ -28,14 +28,6 @@ example makes fairly heavy use of [dplyr](https://dplyr.tidyverse.org/):
 ``` r
 library(ehRsim)
 library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 
 #### user input ####
 # number of EHR sources
@@ -47,6 +39,10 @@ aep = 15
 
 # create cohort
 cohort <- create_cohort(n_src, n_p)
+str(cohort)
+#> 'data.frame':    7000 obs. of  2 variables:
+#>  $ pid   : chr  "1" "2" "3" "4" ...
+#>  $ source: Factor w/ 7 levels "A","B","C","D",..: 1 1 1 1 1 1 1 1 1 1 ...
 ```
 
 A demographics file can then be created and joined to the cohort table:
@@ -132,9 +128,67 @@ encounters <- dplyr::bind_cols(dplyr::left_join(encounter_shell, cohort, by = "p
                                discharge_disposition) |>
   dplyr::mutate(discharge_date = dplyr::if_else(enc_type %in% c("AV", "TH", "ED"), admit_date, discharge_date),
                 discharge_disposition = dplyr::if_else(enc_type %in% c("AV", "TH"), "A", discharge_disposition))
+```
 
+You might have noticed in the above that discharge times are randomly
+selected. For datasets that have any significant number of observations,
+it’s likely there will be discharge times that come before admission
+times, even though both admission date and discharge data are
+equivalent. We can update this with `update_rtime()`:
+
+``` r
+encounters_fixed <- encounters |>  
+  dplyr::mutate(needs_fixing = ifelse(as.POSIXct(paste(discharge_date, discharge_time), format = "%Y-%m-%d %H:%M") < as.POSIXct(paste(admit_date, admit_time), format = "%Y-%m-%d %H:%M"), "x", "")) 
+
+encounters_fixed |> 
+  dplyr::filter(admit_date == discharge_date) |>
+  dplyr::select(pid, admit_date, admit_time, discharge_date, discharge_time, needs_fixing) |> 
+  head(10)
+#>    pid admit_date admit_time discharge_date discharge_time needs_fixing
+#> 1    1 2013-11-14      02:11     2013-11-14          09:08             
+#> 2    1 2016-01-01      14:42     2016-01-01          22:06             
+#> 3    1 2013-08-05      14:50     2013-08-05          00:57            x
+#> 4    1 2018-05-17      09:12     2018-05-17          18:14             
+#> 5    1 2020-10-27      10:49     2020-10-27          07:34            x
+#> 6    1 2021-02-10      14:42     2021-02-10          16:30             
+#> 7    1 2012-05-29      16:43     2012-05-29          00:57            x
+#> 8    1 2021-01-15      03:27     2021-01-15          14:05             
+#> 9   10 2016-07-01      03:01     2016-07-01          20:30             
+#> 10  10 2013-09-21      10:38     2013-09-21          01:34            x
+  
+encounters_fixed <- update_rtime(data = encounters_fixed, 
+                                 perm_date = admit_date, 
+                                 perm_time = admit_time, 
+                                 fix_date = discharge_date, 
+                                 fix_time = discharge_time)
+
+encounters_fixed |> 
+  dplyr::filter(admit_date == discharge_date) |>
+  dplyr::select(pid, admit_date, admit_time, discharge_date, discharge_time, needs_fixing) |> 
+  head(10) 
+#>    pid admit_date admit_time discharge_date discharge_time needs_fixing
+#> 1    1 2013-11-14      02:11     2013-11-14          09:08             
+#> 2    1 2016-01-01      14:42     2016-01-01          22:06             
+#> 3    1 2013-08-05      14:50     2013-08-05          16:09            x
+#> 4    1 2018-05-17      09:12     2018-05-17          18:14             
+#> 5    1 2020-10-27      10:49     2020-10-27          12:08            x
+#> 6    1 2021-02-10      14:42     2021-02-10          16:30             
+#> 7    1 2012-05-29      16:43     2012-05-29          18:02            x
+#> 8    1 2021-01-15      03:27     2021-01-15          14:05             
+#> 9   10 2016-07-01      03:01     2016-07-01          20:30             
+#> 10  10 2013-09-21      10:38     2013-09-21          11:57            x
+
+encounters_fixed <- encounters_fixed |> 
+  dplyr::select(-needs_fixing)
+```
+
+We might also want to delete encounters after an Expired
+discharge_disposition (this will hopefully soon be put into its own
+function):
+
+``` r
 # delete encounters after an Expired discharge_disposition
-encounters_death <- encounters |>
+encounters_death <- encounters_fixed |>
   dplyr::filter(discharge_disposition == "E") |>
   dplyr::select(pid, source, discharge_date) |>
   dplyr::rename(dead_after = discharge_date) |>
@@ -143,7 +197,7 @@ encounters_death <- encounters |>
   dplyr::slice(1) |>
   dplyr::ungroup()
 
-encounters_ <- dplyr::left_join(encounters, encounters_death, by = c("pid", "source")) |>
+encounters_ <- dplyr::left_join(encounters_fixed, encounters_death, by = c("pid", "source")) |>
   dplyr::arrange(source, pid, admit_date)
 encounters <- encounters_ |>
   dplyr::filter(is.na(dead_after) | (admit_date <= dead_after)) |>
@@ -155,30 +209,6 @@ encounters <- encounters |>
                 encounterid = openssl::md5(unique_combo)) |>
   dplyr::select(-los, -unique_combo) |>
   dplyr::relocate(pid, encounterid, enc_type, admit_date, discharge_date, discharge_disposition, source)
-```
-
-You might have noticed in the above that discharge times are randomly
-selected. For datasets that have any significant number of observations,
-it’s likely there will be discharge times that come before admission
-times, even though both admission date and discharge data are
-equivalent. We can update this with `update_rtime()`:
-
-``` r
-encounters |> 
-  filter(admit_date == discharge_date) |> 
-  select(patid, admit_date, admit_time, discharge_date, discharge_time) |> 
-  print(n = 10)
-  
-encounters <- update_rtime(data = encounters, 
-                           perm_date = admit_date, 
-                           perm_time = admit_time, 
-                           fix_date = discharge_date, 
-                           fix_time = discharge_time)
-
-encounters |> 
-  filter(admit_date == discharge_date) |> 
-  select(patid, admit_date, admit_time, discharge_date, discharge_time) |> 
-  print(n = 10)
 ```
 
 Additional planned functionality include sampling from commonly-employed

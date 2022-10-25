@@ -34,29 +34,17 @@ update_rtime <- function(data, perm_time, perm_date, fix_time, fix_date) {
 
   updated_df <- data |>
     dplyr::mutate(# create a datetime representing permanent date/time
-      perm_dt = lubridate::make_datetime(year = as.integer(lubridate::year(as.Date.character({{ perm_date }}, format = '%Y-%m-%d'))),
-                                         month = as.integer(lubridate::month(as.Date.character({{ perm_date }}, format = '%Y-%m-%d'))),
-                                         day = as.integer(lubridate::day(as.Date.character({{ perm_date }}, format = '%Y-%m-%d'))),
-                                         hour = as.integer(lubridate::hour(as.POSIXct(paste({{ perm_date }}, {{ perm_time }}), format = '%Y-%m-%d %H:%M'))),
-                                         min = as.integer(lubridate::minute(as.POSIXct(paste({{ perm_date }}, {{ perm_time }}), format = '%Y-%m-%d %H:%M'))),
-                                         sec = as.integer(lubridate::second(as.POSIXct(paste({{ perm_date }}, {{ perm_time }}), format = '%Y-%m-%d %H:%M'))),
-                                         tz = "UTC"),
-      # create a datetime representing to-be-fixed date/time
-      fix_dt = lubridate::make_datetime(year = as.integer(lubridate::year(as.Date.character({{ fix_date }}, format = '%Y-%m-%d'))),
-                                        month = as.integer(lubridate::month(as.Date.character({{ fix_date }}, format = '%Y-%m-%d'))),
-                                        day = as.integer(lubridate::day(as.Date.character({{ fix_date }}, format = '%Y-%m-%d'))),
-                                        hour = as.integer(lubridate::hour(as.POSIXct(paste({{ fix_date }}, {{ fix_time }}), format = '%Y-%m-%d %H:%M'))),
-                                        min = as.integer(lubridate::minute(as.POSIXct(paste({{ fix_date }}, {{ fix_time }}), format = '%Y-%m-%d %H:%M'))),
-                                        sec = as.integer(lubridate::second(as.POSIXct(paste({{ fix_date }}, {{ fix_time }}), format = '%Y-%m-%d %H:%M'))),
-                                        tz = "UTC"),
-      # if to-be-fixed datetime come on or before permanent datetime, update to-be-fixed datetime
-      # else, keep 'to-be-fixed' datetime
-      updated_dt = if_else(.data$fix_dt <= .data$perm_dt, .data$perm_dt + sample(seq(1500:6300), size = 1), .data$fix_dt),
-      # convert date part to character
-      updated_date = strftime(.data$updated_dt, format = "%Y-%m-%d"),
-      # convert time part to character
-      updated_time = strftime(.data$updated_dt, format = "%H:%M")) |>
-    select(!all_of(remove_vars)) |>
-    rename({{ fix_date }} := .data$updated_date, {{ fix_time }} := .data$updated_time)
+                  perm_dt = as.POSIXct(paste({{ perm_date }}, {{ perm_time }}), format = "%Y-%m-%d %H:%M"),
+                  fix_dt = as.POSIXct(paste({{ fix_date }}, {{ fix_time }}), format = "%Y-%m-%d %H:%M"),
+
+                  # if to-be-fixed datetime come on or before permanent datetime, update to-be-fixed datetime
+                  # else, keep 'to-be-fixed' datetime
+                  updated_dt = if_else(.data$fix_dt < .data$perm_dt, .data$perm_dt + sample(seq(1500, 6300, 60), size = 1), .data$fix_dt),
+                  # convert date part to character
+                  updated_date = strftime(.data$updated_dt, format = "%Y-%m-%d"),
+                  # convert time part to character
+                  updated_time = strftime(.data$updated_dt, format = "%H:%M")) |>
+    dplyr::select(!all_of(remove_vars)) |>
+    dplyr::rename({{ fix_date }} := .data$updated_date, {{ fix_time }} := .data$updated_time)
 
 }
