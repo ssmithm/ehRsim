@@ -23,8 +23,7 @@ devtools::install_github("ssmithm/ehRsim")
 ## Example
 
 This is a basic example developing a few common datasets. Note that this
-example makes fairly heavy use of
-\[dplyr\]\[<https://dplyr.tidyverse.org/>\]:
+example makes fairly heavy use of [dplyr](https://dplyr.tidyverse.org/):
 
 ``` r
 library(ehRsim)
@@ -165,7 +164,11 @@ times, even though both admission date and discharge data are
 equivalent. We can update this with `update_rtime()`:
 
 ``` r
-encounters <- update_rtime(data = encounters, perm_date = admit_date, perm_time = admit_time, fix_date = discharge_date, fix_time = discharge_time)
+encounters <- update_rtime(data = encounters, 
+                           perm_date = admit_date, 
+                           perm_time = admit_time, 
+                           fix_date = discharge_date, 
+                           fix_time = discharge_time)
 ```
 
 Additional planned functionality include sampling from commonly-employed

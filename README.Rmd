@@ -31,7 +31,7 @@ devtools::install_github("ssmithm/ehRsim")
 
 ## Example
 
-This is a basic example developing a few common datasets. Note that this example makes fairly heavy use of [dplyr][https://dplyr.tidyverse.org/]:
+This is a basic example developing a few common datasets. Note that this example makes fairly heavy use of [dplyr](https://dplyr.tidyverse.org/):
 
 ```{r example}
 library(ehRsim)
@@ -161,7 +161,11 @@ encounters <- encounters |>
 You might have noticed in the above that discharge times are randomly selected. For datasets that have any significant number of observations, it's likely there will be discharge times that come before admission times, even though both admission date and discharge data are equivalent. We can update this with `update_rtime()`:
 
 ```r
-encounters <- update_rtime(data = encounters, perm_date = admit_date, perm_time = admit_time, fix_date = discharge_date, fix_time = discharge_time)
+encounters <- update_rtime(data = encounters, 
+                           perm_date = admit_date, 
+                           perm_time = admit_time, 
+                           fix_date = discharge_date, 
+                           fix_time = discharge_time)
 ```
 
 Additional planned functionality include sampling from commonly-employed datasets and ontologies, for example, International Classification of Diseases (ICD) codes, RXNORM or SNOMED codes, LOINC codes, and so on. Stay tuned. 
