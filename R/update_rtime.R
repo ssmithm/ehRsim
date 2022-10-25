@@ -6,51 +6,57 @@
 #' the randomly-generated discharge time occurs before the randomly generated
 #' admit time, and admit and discharge date are equivalent).
 #'
-#' @param perm_time variable that represents the established time around which
-#' `fix_time` will be corrected.
-#' @param perm_date variable that represents the established date around which
-#' `fix_time` will be corrected.
-#' @param fix_time variable that represents the to-be-updated time which will be
-#' corrected.
-#' @param fix_date variable that represents the date of the to-be-updated time
-#' which will be corrected.
+#' @param data data.frame which needs updating.
+#' @param perm_time existing time around which `fix_time` will be corrected.
+#' @param perm_date the existing date around which `fix_time` will be corrected.
+#' @param fix_time the to-be-corrected time.
+#' @param fix_date the date of the to-be-corrected time.
 #' @examples
-#' encounters <- encounters |>
-#'   dplyr::mutate(discharge_time = update_rtime(perm_time = admit_time,
-#'                                               perm_date = admit_date,
-#'                                               fix_time = discharge_time,
-#'                                               fix_date = discharge_date))
-#' #' @export
-update_rtime <- function(perm_time, perm_date, fix_time, fix_date) {
+#' df <- data.frame(admit_date = c("2022-02-01", "2022-02-01"),
+#'                  discharge_date = c("2022-02-01", "2022-02-03"),
+#'                  admit_time = c("08:00", "10:00"),
+#'                  discharge_time = c("06:00", "06:00"))
+#'
+#' df <- update_rtime(data = df, perm_time = admit_time, perm_date = admit_date,
+#'                    fix_time = discharge_time, fix_date = discharge_date)
+#' @importFrom lubridate make_datetime year month day hour minute second
+#' @importFrom dplyr mutate select rename if_else all_of
+#' @importFrom rlang enquo := !! .data as_name
+#' @export
+update_rtime <- function(data, perm_time, perm_date, fix_time, fix_date) {
 
-  perm_dt <- lubridate::make_datetime(
-    year = as.integer(lubridate::year(perm_date)),
-    month = as.integer(lubridate::month(perm_date)),
-    day = as.integer(lubridate::day(perm_date)),
-    hour = as.integer(lubridate::hour(paste(perm_date, perm_time))),
-    min = as.integer(lubridate::minute(paste(perm_date, perm_time))),
-    sec = as.integer(lubridate::second(paste(perm_date, perm_time))),
-    tz = "UTC"
-  )
+  # perm_time <- enquo(perm_time)
+  # perm_date <- enquo(perm_date)
+  fix_time <- enquo(fix_time)
+  fix_date <- enquo(fix_date)
 
-  fix_dt <- lubridate::make_datetime(
-    year = as.integer(lubridate::year(fix_date)),
-    month = as.integer(lubridate::month(fix_date)),
-    day = as.integer(lubridate::day(fix_date)),
-    hour = as.integer(lubridate::hour(paste(fix_date, fix_time))),
-    min = as.integer(lubridate::minute(paste(fix_date, fix_time))),
-    sec = as.integer(lubridate::second(paste(fix_date, fix_time))),
-    tz = "UTC"
-  )
+  remove_vars <- c("perm_dt", "fix_dt", "updated_dt", rlang::as_name(fix_time), rlang::as_name(fix_date))
 
-  if (fix_dt <= perm_dt) {
-
-    perm_date + sample(seq(1500:6300), size = 1)
-
-  } else {
-
-    fix_date
-
-  }
+  updated_df <- data |>
+    dplyr::mutate(# create a datetime representing permanent date/time
+      perm_dt = lubridate::make_datetime(year = as.integer(lubridate::year(as.Date.character({{ perm_date }}, format = '%Y-%m-%d'))),
+                                         month = as.integer(lubridate::month(as.Date.character({{ perm_date }}, format = '%Y-%m-%d'))),
+                                         day = as.integer(lubridate::day(as.Date.character({{ perm_date }}, format = '%Y-%m-%d'))),
+                                         hour = as.integer(lubridate::hour(as.POSIXct(paste({{ perm_date }}, {{ perm_time }}), format = '%Y-%m-%d %H:%M'))),
+                                         min = as.integer(lubridate::minute(as.POSIXct(paste({{ perm_date }}, {{ perm_time }}), format = '%Y-%m-%d %H:%M'))),
+                                         sec = as.integer(lubridate::second(as.POSIXct(paste({{ perm_date }}, {{ perm_time }}), format = '%Y-%m-%d %H:%M'))),
+                                         tz = "UTC"),
+      # create a datetime representing to-be-fixed date/time
+      fix_dt = lubridate::make_datetime(year = as.integer(lubridate::year(as.Date.character({{ fix_date }}, format = '%Y-%m-%d'))),
+                                        month = as.integer(lubridate::month(as.Date.character({{ fix_date }}, format = '%Y-%m-%d'))),
+                                        day = as.integer(lubridate::day(as.Date.character({{ fix_date }}, format = '%Y-%m-%d'))),
+                                        hour = as.integer(lubridate::hour(as.POSIXct(paste({{ fix_date }}, {{ fix_time }}), format = '%Y-%m-%d %H:%M'))),
+                                        min = as.integer(lubridate::minute(as.POSIXct(paste({{ fix_date }}, {{ fix_time }}), format = '%Y-%m-%d %H:%M'))),
+                                        sec = as.integer(lubridate::second(as.POSIXct(paste({{ fix_date }}, {{ fix_time }}), format = '%Y-%m-%d %H:%M'))),
+                                        tz = "UTC"),
+      # if to-be-fixed datetime come on or before permanent datetime, update to-be-fixed datetime
+      # else, keep 'to-be-fixed' datetime
+      updated_dt = if_else(.data$fix_dt <= .data$perm_dt, .data$perm_dt + sample(seq(1500:6300), size = 1), .data$fix_dt),
+      # convert date part to character
+      updated_date = strftime(.data$updated_dt, format = "%Y-%m-%d"),
+      # convert time part to character
+      updated_time = strftime(.data$updated_dt, format = "%H:%M")) |>
+    select(!all_of(remove_vars)) |>
+    rename({{ fix_date }} := .data$updated_date, {{ fix_time }} := .data$updated_time)
 
 }

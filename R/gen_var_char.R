@@ -9,6 +9,8 @@
 #' @returns a data.frame with # observations equal to the cohort.
 #' @examples
 #' gen_var_char(v = sex, nc = 100, opts = c("F","M"), p = c(0.51, 0.49))
+#' @importFrom rlang :=
+#' @importFrom dplyr rename
 #' @export
 gen_var_char <- function(v, nc, opts, p) {
 

@@ -6,7 +6,7 @@
 \usage{
 rdate(
   v = rdate,
-  size,
+  nc,
   min = paste0(format(Sys.Date(), "\%Y"), "-01-01"),
   max = Sys.Date()
 )
@@ -14,7 +14,7 @@ rdate(
 \arguments{
 \item{v}{name of variable.}
 
-\item{size}{number of name of data.table to match size of.}
+\item{nc}{number or name of data.table to match size of.}
 
 \item{min}{minimum date of date range to sample from, formatted as
 "YYYY-MM-DD"; defaults to Jan 1 of current year.}
@@ -30,9 +30,6 @@ A date.
 to other random number generators in base R.
 }
 \examples{
-rdate(10)
-rdate(10, "2010-12-01", "2015-11-30", sort = FALSE)
-}
-\seealso{
-[add_date_var()], which is the user function this function supports.
+rdate(nc = 10)
+rdate(v = admit_date, nc = 10, "2010-12-01", "2015-11-30")
 }

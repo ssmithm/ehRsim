@@ -13,10 +13,11 @@
 #' @returns a data.frame with # observations equal to `nc`.
 #' @examples
 #' x <- gen_var_num(v = systolic, nc = 1000, dist = "normal", int = TRUE, mean = 130, sd = 16)
+#' @importFrom stats rnorm runif
 #' @export
 gen_var_num <- function(v, nc, dist, int = FALSE, ...) {
 
-  if (is.numeric(nc) & length(nc) == 1) {
+  if (is.vector(nc) && length(nc) == 1) {
 
       s = nc
 
@@ -32,15 +33,15 @@ gen_var_num <- function(v, nc, dist, int = FALSE, ...) {
 
   if (dist == "normal") {
 
-    x <- data.frame(v = stats::rnorm(n = s, mean = mean, sd = sd))
+    x <- data.frame(v = stats::rnorm(n = s, ...))
 
   } else if (dist == "uniform") {
 
-    x <- data.frame(v = stats::runif(n = s, min = min, max = as.integer(max)))
+    x <- data.frame(v = stats::runif(n = s, ...))
 
   } else if (dist == "sample.integer") {
 
-    x <- data.frame(v = sample.int(n = n, size = s, replace = TRUE))
+    x <- data.frame(v = sample.int(n = s, size = s, replace = TRUE))
 
   } else {
 

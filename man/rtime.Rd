@@ -4,23 +4,38 @@
 \alias{rtime}
 \title{Generate random time(s)}
 \usage{
-rtime(v = time, nc, format = "12H", pr.wh = 0.5, min = "00:00", max = "23:59")
+rtime(
+  v,
+  nc,
+  format = "12H",
+  min = "00:00",
+  max = "23:59",
+  pr.wh = 0.5,
+  wh.min = "08:00",
+  wh.max = "17:00"
+)
 }
 \arguments{
 \item{v}{name of variable.}
 
-\item{nc}{name of data.table to match size of.}
+\item{nc}{name of data.table to match size of, or vector of length = 1.}
 
 \item{format}{final formatting of time; valid options are "12H" and "24H"}
+
+\item{min}{earliest time to sample from (in 24H format); default is "00:00"}
+
+\item{max}{latest time to sample from (in 24H format); default is "23:59"}
 
 \item{pr.wh}{probability of time being in 'working hours' (defined as 8 AM to
 5 PM); a value of 0.5 means equal probability for working vs. non-working
 hours. Primarily used to preferentially select working-hour admit or
 measurement times for outpatient/ambulatory visits.}
 
-\item{min}{earliest time to sample from (in 24H format); default is "00:00"}
+\item{wh.min}{earliest time to sample from (in 24H format) for working hours;
+default is "08:00". Must be earlier than `min`.}
 
-\item{max}{latest time to sample from (in 24H format); default is "23:59"}
+\item{wh.max}{latest time to sample from (in 24H format) for working hours;
+default is "17:00". Must be later than `max`.}
 }
 \value{
 A dataset with character column formatted as "HH:MM" (24H) or
@@ -31,6 +46,6 @@ A dataset with character column formatted as "HH:MM" (24H) or
 to other random number generators in base R.
 }
 \examples{
-rdate(10)
-rdate(10, "2010-12-01", "2015-11-30", sort = FALSE)
+rtime(v = admit_time, nc = 150, format = "24H", pr.wh = 1, wh.min = "08:00", wh.max = "17:00")
+rtime(vital_time, mtcars, "12H", "00:00", "23:59", 0.7, "07:30", "17:30")
 }

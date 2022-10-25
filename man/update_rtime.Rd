@@ -4,20 +4,18 @@
 \alias{update_rtime}
 \title{Generate random date(s)}
 \usage{
-update_rtime(perm_time, perm_date, fix_time, fix_date)
+update_rtime(data, perm_time, perm_date, fix_time, fix_date)
 }
 \arguments{
-\item{perm_time}{variable that represents the established time around which
-`fix_time` will be corrected.}
+\item{data}{data.frame which needs updating.}
 
-\item{perm_date}{variable that represents the established date around which
-`fix_time` will be corrected.}
+\item{perm_time}{existing time around which `fix_time` will be corrected.}
 
-\item{fix_time}{variable that represents the to-be-updated time which will be
-corrected.}
+\item{perm_date}{the existing date around which `fix_time` will be corrected.}
 
-\item{fix_date}{variable that represents the date of the to-be-updated time
-which will be corrected.}
+\item{fix_time}{the to-be-corrected time.}
+
+\item{fix_date}{the date of the to-be-corrected time.}
 }
 \description{
 `update_rtime()` is an user-facing function that updates (fixes) a previously-
@@ -27,10 +25,11 @@ the randomly-generated discharge time occurs before the randomly generated
 admit time, and admit and discharge date are equivalent).
 }
 \examples{
-encounters <- encounters |>
-  dplyr::mutate(discharge_time = update_rtime(perm_time = admit_time,
-                                              perm_date = admit_date,
-                                              fix_time = discharge_time,
-                                              fix_date = discharge_date))
-#' @export
+df <- data.frame(admit_date = c("2022-02-01", "2022-02-01"),
+                 discharge_date = c("2022-02-01", "2022-02-03"),
+                 admit_time = c("08:00", "10:00"),
+                 discharge_time = c("06:00", "06:00"))
+
+df <- update_rtime(data = df, perm_time = admit_time, perm_date = admit_date,
+                   fix_time = discharge_time, fix_date = discharge_date)
 }
