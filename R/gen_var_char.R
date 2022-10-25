@@ -10,11 +10,11 @@
 #' @examples
 #' gen_var_char(v = sex, nc = 100, opts = c("F","M"), p = c(0.51, 0.49))
 #' @importFrom rlang :=
-#' @importFrom dplyr rename
+#' @importFrom dplyr rename near
 #' @export
 gen_var_char <- function(v, nc, opts, p) {
 
-  if (sum(p) != 1) {
+  if (!dplyr::near(sum(p), 1)) {
 
     stop("Probabilities sum to > or < 1")
 

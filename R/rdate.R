@@ -21,25 +21,17 @@ rdate <- function(v = rdate,
                   min = paste0(format(Sys.Date(), '%Y'), '-01-01'),
                   max = Sys.Date()) {
 
-  if (length(nc) > 1) {
+  if (is.numeric(nc) && length(nc) == 1) {
 
-    stop("`nc` is requred and should have a length of 1.")
+    size = nc
+
+  } else if (is.data.frame(nc)) {
+
+    size = nrow(nc)
 
   } else {
 
-    if (is.data.frame(nc)) {
-
-      size = nrow(nc)
-
-    } else if (is.vector(nc) && is.numeric(nc)) {
-
-      size = nc
-
-    } else {
-
-      stop("`nc` needs to either be a data.frame or numeric vector.")
-
-    }
+    stop("`nc` is requred, should be numeric, and should have a length of 1.")
 
   }
 
